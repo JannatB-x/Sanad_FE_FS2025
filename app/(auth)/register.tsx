@@ -45,22 +45,27 @@ const RegisterScreen = () => {
       if (data?.token) {
         await setToken(data.token);
         console.log("Token stored after registration");
+        // Set authentication state
+        setIsAuthenticated(true);
+        // Navigate to home page
+        router.replace("/(protected)/(home)" as Href);
+      } else {
+        console.error("No token received from registration response");
+        setErrorMessage(
+          "Registration failed: No token received. Please try again or contact support."
+        );
       }
-
-      // Set authentication state
-      setIsAuthenticated(true);
-
-      // Navigate to home page
-      router.replace("/(protected)/(home)" as Href);
     },
     onError: (error: any) => {
       console.error("Registration error:", error);
 
       // Check if it's a network error
       if (error?.isNetworkError || !error?.response) {
-        setErrorMessage(
-          "Unable to connect to the server. Please check your internet connection and ensure the server is running."
-        );
+        // Use the error message from the API client which has detailed info
+        const networkMessage =
+          error?.message ||
+          "Unable to connect to the server. Please check:\n1. Your internet connection\n2. The backend server is running\n3. The server URL is correct";
+        setErrorMessage(networkMessage);
         return;
       }
 

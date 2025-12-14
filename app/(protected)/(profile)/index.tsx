@@ -48,8 +48,8 @@ const ProfileScreen = () => {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<UserProfile>) => {
-      if (!displayProfile?.Id) throw new Error("User ID not found");
-      return updateProfile(displayProfile.Id, data);
+      // Use /users/me endpoint (no userId needed)
+      return updateProfile("", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });

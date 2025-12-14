@@ -7,11 +7,13 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { format, parseISO } from "date-fns";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { createBooking } from "../../../api/calendar";
 import colors from "../../../data/colors";
 
@@ -20,15 +22,22 @@ const AddBookingScreen = () => {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
 
-  const defaultDate = params.date
-    ? format(parseISO(params.date as string), "yyyy-MM-dd")
-    : format(new Date(), "yyyy-MM-dd");
-  const defaultTime = format(new Date(), "HH:mm");
+  // Initialize dates
+  const initialDate = params.date
+    ? parseISO(params.date as string)
+    : new Date();
+  const initialTime = new Date();
 
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
-  const [date, setDate] = useState(defaultDate);
-  const [time, setTime] = useState(defaultTime);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [selectedTime, setSelectedTime] = useState(initialTime);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // Format dates for display and API
+  const dateString = format(selectedDate, "yyyy-MM-dd");
+  const timeString = format(selectedTime, "HH:mm");
 
   const createMutation = useMutation({
     mutationFn: createBooking,
@@ -39,14 +48,40 @@ const AddBookingScreen = () => {
       ]);
     },
     onError: (error: any) => {
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to create booking"
-      );
+      console.error("Create booking error:", error);
+
+      let errorMessage = "Failed to create booking";
+
+      // Check for specific error types
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (typeof error?.response?.data === "string") {
+        errorMessage = error.response.data;
+      }
+
+      Alert.alert("Error", errorMessage);
     },
   });
+
+  const handleDateChange = (event: any, date?: Date) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const handleTimeChange = (event: any, time?: Date) => {
+    if (Platform.OS === "android") {
+      setShowTimePicker(false);
+    }
+    if (time) {
+      setSelectedTime(time);
+    }
+  };
 
   const handleSave = () => {
     if (!title.trim()) {
@@ -57,20 +92,18 @@ const AddBookingScreen = () => {
       Alert.alert("Error", "Please enter a location");
       return;
     }
-    if (!date.trim()) {
-      Alert.alert("Error", "Please enter a date");
-      return;
-    }
-    if (!time.trim()) {
-      Alert.alert("Error", "Please enter a time");
-      return;
-    }
+
+    // Combine date and time into a Date object for the backend
+    // Backend expects Date field to be a Date type
+    const [hours, minutes] = timeString.split(":").map(Number);
+    const bookingDate = new Date(selectedDate);
+    bookingDate.setHours(hours || 0, minutes || 0, 0, 0);
 
     createMutation.mutate({
       Title: title.trim(),
       Location: location.trim(),
-      Date: date.trim(),
-      Time: time.trim(),
+      Date: bookingDate.toISOString(), // Send as ISO string, backend will parse it to Date
+      Time: timeString, // Keep time as string for display
     });
   };
 
@@ -135,48 +168,118 @@ const AddBookingScreen = () => {
             </View>
           </View>
 
-          {/* Date Input */}
+          {/* Date Picker */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Date *</Text>
-            <View style={styles.inputWithIcon}>
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={() => setShowDatePicker(true)}
+            >
               <Ionicons
                 name="calendar-outline"
                 size={20}
                 color={colors.primary}
                 style={styles.inputIcon}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD (e.g., 2024-12-25)"
-                placeholderTextColor={colors.gray}
-                value={date}
-                onChangeText={setDate}
-                keyboardType="default"
+              <Text style={styles.pickerText}>
+                {format(selectedDate, "MMMM d, yyyy")}
+              </Text>
+              <Ionicons
+                name="chevron-down-outline"
+                size={20}
+                color={colors.gray}
               />
-            </View>
-            <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <>
+                {Platform.OS === "ios" && (
+                  <View style={styles.iosPickerContainer}>
+                    <View style={styles.iosPickerHeader}>
+                      <TouchableOpacity
+                        onPress={() => setShowDatePicker(false)}
+                        style={styles.iosPickerButton}
+                      >
+                        <Text style={styles.iosPickerButtonText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={selectedDate}
+                      mode="date"
+                      display="spinner"
+                      onChange={handleDateChange}
+                      minimumDate={new Date()}
+                      style={styles.iosPicker}
+                    />
+                  </View>
+                )}
+                {Platform.OS === "android" && (
+                  <DateTimePicker
+                    value={selectedDate}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                    minimumDate={new Date()}
+                  />
+                )}
+              </>
+            )}
           </View>
 
-          {/* Time Input */}
+          {/* Time Picker */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Time *</Text>
-            <View style={styles.inputWithIcon}>
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={() => setShowTimePicker(true)}
+            >
               <Ionicons
                 name="time-outline"
                 size={20}
                 color={colors.primary}
                 style={styles.inputIcon}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="HH:MM (e.g., 14:30)"
-                placeholderTextColor={colors.gray}
-                value={time}
-                onChangeText={setTime}
-                keyboardType="default"
+              <Text style={styles.pickerText}>
+                {format(selectedTime, "h:mm a")}
+              </Text>
+              <Ionicons
+                name="chevron-down-outline"
+                size={20}
+                color={colors.gray}
               />
-            </View>
-            <Text style={styles.hint}>Format: HH:MM (24-hour format)</Text>
+            </TouchableOpacity>
+            {showTimePicker && (
+              <>
+                {Platform.OS === "ios" && (
+                  <View style={styles.iosPickerContainer}>
+                    <View style={styles.iosPickerHeader}>
+                      <TouchableOpacity
+                        onPress={() => setShowTimePicker(false)}
+                        style={styles.iosPickerButton}
+                      >
+                        <Text style={styles.iosPickerButtonText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={selectedTime}
+                      mode="time"
+                      display="spinner"
+                      onChange={handleTimeChange}
+                      is24Hour={false}
+                      style={styles.iosPicker}
+                    />
+                  </View>
+                )}
+                {Platform.OS === "android" && (
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    display="default"
+                    onChange={handleTimeChange}
+                    is24Hour={false}
+                  />
+                )}
+              </>
+            )}
           </View>
 
           {/* Save Button */}
@@ -257,11 +360,47 @@ const styles = StyleSheet.create({
   inputIcon: {
     marginRight: 4,
   },
-  hint: {
-    fontSize: 12,
-    color: colors.gray,
-    marginTop: 4,
-    marginLeft: 4,
+  pickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  pickerText: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.dark,
+  },
+  iosPickerContainer: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  iosPickerHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  iosPickerButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  iosPickerButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.primary,
+  },
+  iosPicker: {
+    height: 200,
   },
   saveButton: {
     backgroundColor: colors.primary,

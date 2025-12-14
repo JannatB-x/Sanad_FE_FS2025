@@ -1,9 +1,10 @@
 import { login } from "../../api/auth";
-import { getToken, storeToken } from "../../api/storage";
+import { setToken } from "../../api/client";
 import AuthContext from "../../context/authContext";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import React, { useContext, useState } from "react";
+import type { AuthResponse } from "../../types/index";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -29,24 +30,19 @@ const Login = () => {
 
   const { mutate, isPending } = useMutation({
     mutationKey: ["login"],
-    mutationFn: () => login({ Email: email, Password: password }),
-    onSuccess: async (data) => {
+    mutationFn: () => login({ email, password }),
+    onSuccess: async (data: AuthResponse) => {
       if (data?.token) {
-        await storeToken(data.token);
+        await setToken(data.token);
         console.log("Login successful - Token stored");
-
-        // Verify token was stored
-        const storedToken = await getToken();
-        if (storedToken) {
-          console.log("Token verified in storage");
-        } else {
-          console.error("Token storage verification failed");
-        }
+        setIsAuthenticated(true);
+        router.replace("/(protected)/(home)" as Href);
       } else {
         console.error("No token received from login response");
+        setErrorMessage(
+          "Login failed: No token received. Please try again or contact support."
+        );
       }
-      setIsAuthenticated(true);
-      router.replace("/(protected)/(home)" as Href);
     },
     onError: (error: any) => {
       // Check if it's a network error

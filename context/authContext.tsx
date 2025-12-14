@@ -24,17 +24,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Check if user has a token on app startup
     const checkAuth = async () => {
       try {
-        // Use require for React Native compatibility
+        // Use the same token storage as api/client.ts (auth_token key)
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const storageModule = require("../api/storage");
-        const getTokenFn = storageModule.getToken;
-
-        if (getTokenFn && typeof getTokenFn === "function") {
-          const token = await getTokenFn();
-          setIsAuthenticated(!!token);
-        } else {
-          setIsAuthenticated(false);
-        }
+        const AsyncStorage =
+          require("@react-native-async-storage/async-storage").default;
+        const token = await AsyncStorage.getItem("auth_token");
+        setIsAuthenticated(!!token);
       } catch (error) {
         console.error("Error checking auth:", error);
         setIsAuthenticated(false);

@@ -1,30 +1,51 @@
 import axios, { type AxiosRequestHeaders } from "axios";
-import { removeToken } from "./storage";
+import { API_URL } from "../constants/config";
 
-// API Configuration
-// For iOS Simulator: Use your computer's local IP address instead of localhost
-// Example: http://192.168.1.100:3000/api
-// To find your IP: On Mac run `ipconfig getifaddr en0` or check System Preferences > Network
-// Set EXPO_PUBLIC_API_URL environment variable or update the default below
+// API Configuration - Use the same base URL as api/client.ts
 const instance = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000/api",
+  baseURL: API_URL,
   timeout: 10000, // 10 second timeout
 });
 
 instance.interceptors.request.use(
   async (config) => {
+    // Validate config exists
+    if (!config) {
+      console.error("Request interceptor: config is undefined");
+      return Promise.reject(new Error("Request config is undefined"));
+    }
+
     let token: string | null = null;
 
     try {
-      // Use require for React Native compatibility (static import causes bundling issues)
+      // Use the same token storage as api/client.ts (auth_token key)
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const storageModule = require("./storage");
-      const getTokenFn = storageModule.getToken;
+      const AsyncStorage =
+        require("@react-native-async-storage/async-storage").default;
 
-      if (getTokenFn && typeof getTokenFn === "function") {
-        token = await getTokenFn();
-      } else {
-        console.warn("getToken is not available from storage module");
+      // Try to get token from the correct key first
+      token = await AsyncStorage.getItem("auth_token");
+
+      // If not found, check the old key and migrate if present
+      if (!token) {
+        const oldToken = await AsyncStorage.getItem("token");
+        if (oldToken) {
+          console.log(
+            "[Token Migration] Found token in old location, migrating..."
+          );
+          // Migrate to new key
+          await AsyncStorage.setItem("auth_token", oldToken);
+          await AsyncStorage.removeItem("token");
+          token = oldToken;
+        }
+      }
+
+      if (token) {
+        // Ensure token doesn't have Bearer prefix and is trimmed
+        token = token.trim();
+        if (token.startsWith("Bearer ")) {
+          token = token.substring(7).trim();
+        }
       }
     } catch (error) {
       console.error("Error getting token in interceptor:", error);
@@ -41,24 +62,39 @@ instance.interceptors.request.use(
       headers.Authorization = `Bearer ${cleanToken}`;
       config.headers = headers;
 
-      console.log("=== Request Interceptor ===");
-      console.log("URL:", config.url);
-      console.log("Method:", config.method?.toUpperCase());
-      console.log("Token present:", !!cleanToken);
-      console.log("Token length:", cleanToken.length);
-      console.log(
-        "Authorization header:",
-        `Bearer ${cleanToken.substring(0, 20)}...`
-      );
-      console.log("Request headers:", JSON.stringify(config.headers, null, 2));
-      console.log("Request data:", config.data);
-      console.log("===========================");
+      // Log calendar requests for debugging
+      if (config.url?.includes("calendar")) {
+        console.log("[Calendar Request] URL:", config.url);
+        console.log("[Calendar Request] Method:", config.method);
+        console.log("[Calendar Request] Has token:", !!cleanToken);
+      }
+
+      // Safe logging
+      try {
+        console.log("=== Request Interceptor ===");
+        console.log("URL:", config.url);
+        console.log("Method:", config.method?.toUpperCase());
+        console.log("Token present:", !!cleanToken);
+        console.log("Token length:", cleanToken.length);
+        console.log(
+          "Authorization header:",
+          `Bearer ${cleanToken.substring(0, 20)}...`
+        );
+        console.log("===========================");
+      } catch (logError) {
+        // If logging fails, continue silently
+      }
     } else {
-      console.error("=== Request Interceptor ERROR ===");
-      console.error("No token found in storage!");
-      console.error("URL:", config.url);
-      console.error("Method:", config.method);
-      console.error("=================================");
+      // Safe error logging
+      try {
+        console.warn("=== Request Interceptor ===");
+        console.warn("No token found in storage");
+        console.warn("URL:", config?.url);
+        console.warn("Method:", config?.method);
+        console.warn("===========================");
+      } catch (logError) {
+        // If logging fails, continue silently
+      }
     }
 
     return config;
@@ -70,8 +106,29 @@ instance.interceptors.request.use(
 
 // Response interceptor to handle errors
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log calendar responses for debugging
+    if (response.config.url?.includes("calendar")) {
+      console.log(
+        "[Calendar Response] Success:",
+        response.status,
+        response.config.url
+      );
+    }
+    return response;
+  },
   async (error) => {
+    // Log calendar errors for debugging
+    if (error.config?.url?.includes("calendar")) {
+      console.error("[Calendar Error] Details:", {
+        status: error?.response?.status,
+        url: error.config.url,
+        method: error.config.method,
+        baseURL: error.config.baseURL,
+        fullURL: `${error.config.baseURL}${error.config.url}`,
+        message: error?.response?.data?.message || error?.message,
+      });
+    }
     // Handle network errors (no response from server)
     if (!error.response) {
       const errorMessage = error.message || "Network error";
@@ -128,8 +185,16 @@ instance.interceptors.response.use(
 
       // Only clear token on 401 (Unauthorized) - 403 might be permission-based
       if (status === 401) {
-        await removeToken();
-        console.log(`Token cleared due to 401 error`);
+        try {
+          // Use the same token storage as api/client.ts (auth_token key)
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const AsyncStorage =
+            require("@react-native-async-storage/async-storage").default;
+          await AsyncStorage.removeItem("auth_token");
+          console.log(`Token cleared due to 401 error`);
+        } catch (error) {
+          console.error("Error removing token:", error);
+        }
       } else {
         // For 403, log but don't clear token - might be a permission issue
         console.warn(

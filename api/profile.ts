@@ -1,5 +1,5 @@
 import instance from "./index";
-import { removeToken } from "./storage";
+import { removeToken } from "./client";
 
 export interface UserProfile {
   Id: string;
@@ -19,6 +19,8 @@ export interface UserProfile {
   SavedServices: string[];
   SavedTransporters: string[];
   SavedLocations: string[];
+  Avatar?: string; // Profile picture URL
+  Documents?: string[]; // Array of document URLs
 }
 
 export interface UpdateProfileData {
@@ -111,33 +113,121 @@ const decodeToken = (token: string): string | null => {
  */
 export const getMyProfile = async (): Promise<UserProfile> => {
   try {
-    // Try /users/me endpoint first
+    // Backend has GET /api/users/me endpoint with authorize middleware
+    console.log("[Profile API] Attempting to fetch profile from /users/me");
     const response = await instance.get("/users/me");
-    return response.data.user || response.data;
+    console.log("[Profile API] Profile fetch successful:", response.status);
+    // Backend returns: { message, user: { id, name, email, role, ... } }
+    const userData = response.data.user || response.data;
+
+    // Map backend response (camelCase) to UserProfile format (PascalCase)
+    if (userData) {
+      return {
+        Id: userData.id || userData._id || "",
+        Name: userData.name || userData.Name || "",
+        Role: userData.role || userData.Role || "user",
+        Email: userData.email || userData.Email || "",
+        Identification:
+          userData.identification || userData.Identification || "",
+        Password: "", // Password is not returned from backend
+        MedicalHistory:
+          userData.medicalHistory || userData.MedicalHistory || "",
+        Disabilities: userData.disabilities || userData.Disabilities || "",
+        FunctionalNeeds:
+          userData.functionalNeeds || userData.FunctionalNeeds || "",
+        Location: userData.location || userData.Location || "",
+        Bookings: userData.bookings || userData.Bookings || [],
+        EmergencyContact:
+          userData.emergencyContact || userData.EmergencyContact || "",
+        EmergencyContactPhone:
+          userData.emergencyContactPhone ||
+          userData.EmergencyContactPhone ||
+          "",
+        EmergencyContactRelationship:
+          userData.emergencyContactRelationship ||
+          userData.EmergencyContactRelationship ||
+          "",
+        SavedServices: userData.savedServices || userData.SavedServices || [],
+        SavedTransporters:
+          userData.savedTransporters || userData.SavedTransporters || [],
+        SavedLocations:
+          userData.savedLocations || userData.SavedLocations || [],
+      };
+    }
+    throw new Error("No user data received");
   } catch (error: any) {
-    // If /users/me fails, try to decode token and use /users/:id
+    console.error("[Profile API] Error fetching profile:", {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      message: error?.response?.data?.message || error?.message,
+      url: error?.config?.url,
+      baseURL: error?.config?.baseURL,
+    });
+
+    // Handle specific error statuses
     if (error?.response?.status === 401) {
       throw new Error("Session expired. Please login again.");
     }
 
-    // Try fallback: decode token to get user ID
+    if (error?.response?.status === 404) {
+      console.warn(
+        "[Profile API] /users/me endpoint returned 404, trying fallback"
+      );
+      // Continue to fallback below
+    }
+
+    // Try fallback: decode token to get user ID (if /users/me is not available)
     try {
-      // Use require for React Native compatibility (static import causes bundling issues)
+      // Use require for React Native compatibility
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const storageModule = require("./storage");
-      const getTokenFn = storageModule.getToken;
+      const AsyncStorage =
+        require("@react-native-async-storage/async-storage").default;
+      const token = await AsyncStorage.getItem("auth_token");
 
-      if (!getTokenFn || typeof getTokenFn !== "function") {
-        console.error("getToken is not available from storage module");
-        throw new Error("getToken function not available");
-      }
-
-      const token = await getTokenFn();
       if (token) {
         const userId = decodeToken(token);
         if (userId) {
           const response = await instance.get(`/users/${userId}`);
-          return response.data.user || response.data;
+          const userData = response.data.user || response.data;
+
+          // Map backend response to UserProfile format
+          if (userData) {
+            return {
+              Id: userData._id || userData.id || "",
+              Name: userData.Name || userData.name || "",
+              Role: userData.Role || userData.role || "user",
+              Email: userData.Email || userData.email || "",
+              Identification:
+                userData.Identification || userData.identification || "",
+              Password: "",
+              MedicalHistory:
+                userData.MedicalHistory || userData.medicalHistory || "",
+              Disabilities:
+                userData.Disabilities || userData.disabilities || "",
+              FunctionalNeeds:
+                userData.FunctionalNeeds || userData.functionalNeeds || "",
+              Location: userData.Location || userData.location || "",
+              Bookings: userData.Bookings || userData.bookings || [],
+              EmergencyContact:
+                userData.EmergencyContact || userData.emergencyContact || "",
+              EmergencyContactPhone:
+                userData.EmergencyContactPhone ||
+                userData.emergencyContactPhone ||
+                "",
+              EmergencyContactRelationship:
+                userData.EmergencyContactRelationship ||
+                userData.emergencyContactRelationship ||
+                "",
+              SavedServices:
+                userData.SavedServices || userData.savedServices || [],
+              SavedTransporters:
+                userData.SavedTransporters || userData.savedTransporters || [],
+              SavedLocations:
+                userData.SavedLocations || userData.savedLocations || [],
+              Avatar: userData.avatar || userData.Avatar || "",
+              Documents: userData.documents || userData.Documents || [],
+            };
+          }
         } else {
           console.warn("Could not extract user ID from token");
         }
@@ -149,12 +239,23 @@ export const getMyProfile = async (): Promise<UserProfile> => {
       // Don't throw here, let the original error be thrown below
     }
 
-    // If all attempts fail, throw original error
-    const errorMessage =
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.message ||
+    // If all attempts fail, throw original error with better message
+    let errorMessage =
       "Failed to fetch profile. Please ensure you are logged in.";
+
+    if (error?.response?.status === 404) {
+      errorMessage =
+        "Profile endpoint not found. Please check your backend configuration.";
+    } else if (error?.response?.status === 401) {
+      errorMessage = "Session expired. Please login again.";
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error?.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+
     throw new Error(errorMessage);
   }
 };
@@ -183,8 +284,8 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
 
 /**
  * Update user profile
- * @param userId - User ID
- * @param data - Profile data to update
+ * @param userId - User ID (deprecated, now uses /users/me endpoint)
+ * @param data - Profile data to update (PascalCase fields for backend)
  * @returns Promise with updated profile data
  */
 export const updateProfile = async (
@@ -192,8 +293,74 @@ export const updateProfile = async (
   data: UpdateProfileData
 ): Promise<UserProfile> => {
   try {
-    const response = await instance.put(`/users/${userId}`, data);
-    return response.data.user || response.data;
+    // Convert UpdateProfileData to PascalCase for backend
+    const backendData: any = {};
+    if (data.Name !== undefined) backendData.Name = data.Name;
+    if (data.Email !== undefined) backendData.Email = data.Email;
+    if (data.Identification !== undefined)
+      backendData.Identification = data.Identification;
+    if (data.MedicalHistory !== undefined)
+      backendData.MedicalHistory = data.MedicalHistory;
+    if (data.Disabilities !== undefined)
+      backendData.Disabilities = data.Disabilities;
+    if (data.FunctionalNeeds !== undefined)
+      backendData.FunctionalNeeds = data.FunctionalNeeds;
+    if (data.Location !== undefined) backendData.Location = data.Location;
+    if (data.EmergencyContact !== undefined)
+      backendData.EmergencyContact = data.EmergencyContact;
+    if (data.EmergencyContactPhone !== undefined)
+      backendData.EmergencyContactPhone = data.EmergencyContactPhone;
+    if (data.EmergencyContactRelationship !== undefined)
+      backendData.EmergencyContactRelationship =
+        data.EmergencyContactRelationship;
+    if (data.SavedServices !== undefined)
+      backendData.SavedServices = data.SavedServices;
+    if (data.SavedTransporters !== undefined)
+      backendData.SavedTransporters = data.SavedTransporters;
+    if (data.SavedLocations !== undefined)
+      backendData.SavedLocations = data.SavedLocations;
+
+    // Backend has PUT /api/users/me endpoint with authorize middleware
+    const response = await instance.put("/users/me", backendData);
+    const userData = response.data.user || response.data;
+
+    // Map backend response to UserProfile format
+    if (userData) {
+      return {
+        Id: userData.id || userData._id || userId || "",
+        Name: userData.name || userData.Name || "",
+        Role: userData.role || userData.Role || "user",
+        Email: userData.email || userData.Email || "",
+        Identification:
+          userData.identification || userData.Identification || "",
+        Password: "",
+        MedicalHistory:
+          userData.medicalHistory || userData.MedicalHistory || "",
+        Disabilities: userData.disabilities || userData.Disabilities || "",
+        FunctionalNeeds:
+          userData.functionalNeeds || userData.FunctionalNeeds || "",
+        Location: userData.location || userData.Location || "",
+        Bookings: userData.bookings || userData.Bookings || [],
+        EmergencyContact:
+          userData.emergencyContact || userData.EmergencyContact || "",
+        EmergencyContactPhone:
+          userData.emergencyContactPhone ||
+          userData.EmergencyContactPhone ||
+          "",
+        EmergencyContactRelationship:
+          userData.emergencyContactRelationship ||
+          userData.EmergencyContactRelationship ||
+          "",
+        SavedServices: userData.savedServices || userData.SavedServices || [],
+        SavedTransporters:
+          userData.savedTransporters || userData.SavedTransporters || [],
+        SavedLocations:
+          userData.savedLocations || userData.SavedLocations || [],
+        Avatar: userData.avatar || userData.Avatar || "",
+        Documents: userData.documents || userData.Documents || [],
+      };
+    }
+    throw new Error("No user data received");
   } catch (error: any) {
     if (error?.response?.status === 401) {
       throw new Error("Session expired. Please login again.");

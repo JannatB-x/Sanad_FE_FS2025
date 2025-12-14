@@ -21,7 +21,7 @@ export interface AuthResponse {
 }
 
 // Task types
-export type EmotionalFriction = 'Low' | 'Medium' | 'High';
+export type EmotionalFriction = "Low" | "Medium" | "High";
 
 export interface Task {
   _id: string;
@@ -94,7 +94,7 @@ export interface MagicParseResponse {
 // Chat types
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
@@ -117,4 +117,3 @@ export interface ApiError {
   message: string;
   status?: number;
 }
-
