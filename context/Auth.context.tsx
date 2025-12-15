@@ -24,6 +24,13 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: IUser) => void;
+  // Authorization helpers
+  isUser: () => boolean;
+  isRider: () => boolean;
+  isCompany: () => boolean;
+  isAdmin: () => boolean;
+  hasRole: (role: UserType) => boolean;
+  hasAnyRole: (roles: UserType[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +97,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string,
     userType: UserType
   ) => {
+    // Prevent unauthorized registration of admin or company accounts
+    if (userType === UserType.ADMIN || userType === UserType.COMPANY) {
+      throw new Error(
+        "Admin and Company accounts cannot be created through public registration"
+      );
+    }
+
     try {
       const response = await authAPI.register({
         name,
@@ -131,6 +145,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Authorization helper functions
+  const isUser = (): boolean => {
+    return user?.userType === UserType.USER;
+  };
+
+  const isRider = (): boolean => {
+    return user?.userType === UserType.RIDER;
+  };
+
+  const isCompany = (): boolean => {
+    return user?.userType === UserType.COMPANY;
+  };
+
+  const isAdmin = (): boolean => {
+    return user?.userType === UserType.ADMIN;
+  };
+
+  const hasRole = (role: UserType): boolean => {
+    return user?.userType === role;
+  };
+
+  const hasAnyRole = (roles: UserType[]): boolean => {
+    return user ? roles.includes(user.userType) : false;
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -140,6 +179,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     updateUser,
+    isUser,
+    isRider,
+    isCompany,
+    isAdmin,
+    hasRole,
+    hasAnyRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -152,5 +197,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-export { AuthContext as AuthContextType };

@@ -3,9 +3,12 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { type FC } from "react";
+import { ProtectedRoute } from "../../components/common/ProtectedRoute";
+import { UserType } from "../../types/user.type";
 
 const TabsLayout: FC = () => {
   return (
+    <ProtectedRoute allowedRoles={[UserType.USER]}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -65,6 +68,7 @@ const TabsLayout: FC = () => {
         }}
       />
     </Tabs>
+    </ProtectedRoute>
   );
 };
 

@@ -1,8 +1,11 @@
 // app/(admin)/_layout.tsx
 import { Stack } from "expo-router";
+import { ProtectedRoute } from "../../components/common/ProtectedRoute";
+import { UserType } from "../../types/user.type";
 
 export default function AdminLayout() {
   return (
+    <ProtectedRoute allowedRoles={[UserType.ADMIN]}>
     <Stack
       screenOptions={{
         headerShown: true,
@@ -46,5 +49,6 @@ export default function AdminLayout() {
         }}
       />
     </Stack>
+    </ProtectedRoute>
   );
 }

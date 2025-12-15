@@ -4,9 +4,12 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 import { Sizes } from "../../constants/Sizes";
+import { ProtectedRoute } from "../../components/common/ProtectedRoute";
+import { UserType } from "../../types/user.type";
 
 export default function RiderLayout() {
   return (
+    <ProtectedRoute allowedRoles={[UserType.RIDER]}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -60,5 +63,6 @@ export default function RiderLayout() {
         }}
       />
     </Tabs>
+    </ProtectedRoute>
   );
 }
