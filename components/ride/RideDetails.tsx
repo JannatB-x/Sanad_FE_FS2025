@@ -160,14 +160,16 @@ export const RideDetails: React.FC<RideDetailsProps> = ({
           <Text style={styles.sectionTitle}>Rider Information</Text>
 
           <View style={styles.riderContainer}>
-            <Image
-              source={
-                ride.rider.profileImage
-                  ? { uri: ride.rider.profileImage }
-                  : require("../../../assets/default-avatar.png")
-              }
-              style={styles.riderImage}
-            />
+            {ride.rider.profileImage ? (
+              <Image
+                source={{ uri: ride.rider.profileImage }}
+                style={styles.riderImage}
+              />
+            ) : (
+              <View style={[styles.riderImage, styles.riderImagePlaceholder]}>
+                <Ionicons name="person" size={40} color={Colors.textSecondary} />
+              </View>
+            )}
 
             <View style={styles.riderInfo}>
               <Text style={styles.riderName}>{ride.rider.name}</Text>
@@ -355,6 +357,11 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     marginRight: Sizes.marginL,
+  },
+  riderImagePlaceholder: {
+    backgroundColor: Colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   riderInfo: {
     flex: 1,

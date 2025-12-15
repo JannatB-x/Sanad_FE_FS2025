@@ -35,14 +35,16 @@ export const RiderInfo: React.FC<RiderInfoProps> = ({
   if (compact) {
     return (
       <View style={styles.compactContainer}>
-        <Image
-          source={
-            rider.profileImage
-              ? { uri: rider.profileImage }
-              : require("../../../assets/default-avatar.png")
-          }
-          style={styles.compactImage}
-        />
+        {rider.profileImage ? (
+          <Image
+            source={{ uri: rider.profileImage }}
+            style={styles.compactImage}
+          />
+        ) : (
+          <View style={[styles.compactImage, styles.compactImagePlaceholder]}>
+            <Ionicons name="person" size={20} color={Colors.textSecondary} />
+          </View>
+        )}
         <View style={styles.compactInfo}>
           <Text style={styles.compactName}>{rider.name}</Text>
           <View style={styles.compactRating}>
@@ -60,14 +62,16 @@ export const RiderInfo: React.FC<RiderInfoProps> = ({
     <View style={styles.container}>
       {/* Rider Avatar and Info */}
       <View style={styles.header}>
-        <Image
-          source={
-            rider.profileImage
-              ? { uri: rider.profileImage }
-              : require("../../../assets/default-avatar.png")
-          }
-          style={styles.avatar}
-        />
+        {rider.profileImage ? (
+          <Image
+            source={{ uri: rider.profileImage }}
+            style={styles.avatar}
+          />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Ionicons name="person" size={40} color={Colors.textSecondary} />
+          </View>
+        )}
 
         <View style={styles.info}>
           <Text style={styles.name}>{rider.name}</Text>
@@ -281,6 +285,16 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: Sizes.marginM,
+  },
+  compactImagePlaceholder: {
+    backgroundColor: Colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarPlaceholder: {
+    backgroundColor: Colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   compactInfo: {
     flex: 1,

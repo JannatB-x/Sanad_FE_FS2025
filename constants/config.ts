@@ -10,7 +10,8 @@ export const Config = {
     process.env.GOOGLE_MAPS_API_KEY ||
     "AIzaSyDh5EQ_WkXDqErL0VgmlOInGj1tZDE5HLY",
   // Tap Payment Gateway (Kuwait)
-  // TAP_MERCHANT_ID: process.env.TAP_MERCHANT_ID || "XXXXXXXX",
+  // Configure via environment variables:
+  // TAP_PUBLIC_KEY, TAP_SECRET_KEY, TAP_MERCHANT_ID
   // TAP_CURRENCY: "KWD",
 
   // Pricing

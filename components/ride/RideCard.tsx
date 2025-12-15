@@ -102,14 +102,16 @@ export const RideCard: React.FC<RideCardProps> = ({
       {/* Rider Info (if available and showRider is true) */}
       {showRider && ride.rider && (
         <View style={styles.riderContainer}>
-          <Image
-            source={
-              ride.rider.profileImage
-                ? { uri: ride.rider.profileImage }
-                : require("../../../assets/default-avatar.png")
-            }
-            style={styles.riderImage}
-          />
+          {ride.rider.profileImage ? (
+            <Image
+              source={{ uri: ride.rider.profileImage }}
+              style={styles.riderImage}
+            />
+          ) : (
+            <View style={[styles.riderImage, styles.riderImagePlaceholder]}>
+              <Ionicons name="person" size={30} color={Colors.textSecondary} />
+            </View>
+          )}
           <View style={styles.riderInfo}>
             <Text style={styles.riderName}>{ride.rider.name}</Text>
             <View style={styles.riderRating}>
@@ -251,6 +253,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     marginBottom: Sizes.marginL,
+  },
+  riderImagePlaceholder: {
+    backgroundColor: Colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   riderImage: {
     width: 40,

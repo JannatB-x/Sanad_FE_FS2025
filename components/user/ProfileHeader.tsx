@@ -37,14 +37,16 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         onPress={onImagePress}
         disabled={!onImagePress}
       >
-        <Image
-          source={
-            user.profileImage
-              ? { uri: user.profileImage }
-              : require("../../../assets/default-avatar.png")
-          }
-          style={styles.image}
-        />
+        <View style={styles.imagePlaceholder}>
+          {user.profileImage ? (
+            <Image
+              source={{ uri: user.profileImage }}
+              style={styles.image}
+            />
+          ) : (
+            <Ionicons name="person" size={60} color={Colors.textSecondary} />
+          )}
+        </View>
         {onImagePress && (
           <View style={styles.imageBadge}>
             <Ionicons name="camera" size={16} color={Colors.textWhite} />
@@ -174,12 +176,20 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: -60,
   },
-  image: {
+  imagePlaceholder: {
     width: 120,
     height: 120,
     borderRadius: 60,
     borderWidth: 4,
     borderColor: Colors.textWhite,
+    backgroundColor: Colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   imageBadge: {
     position: "absolute",
