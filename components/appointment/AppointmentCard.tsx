@@ -3,7 +3,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { IAppointment } from "../../types/appointment.type";
-import { Colors, getStatusColor } from "../../constants/Colors";
+import { Colors } from "../../constants/Colors";
 import { Sizes } from "../../constants/Sizes";
 
 interface AppointmentCardProps {
@@ -21,8 +21,6 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onDelete,
   showActions = true,
 }) => {
-  const statusColor = getStatusColor(appointment.status);
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -47,6 +45,18 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
+  // Extract location from description if it exists
+  const getLocation = () => {
+    if (!appointment.description) return null;
+    const locationMatch = appointment.description.match(/Location:\s*(.+)/);
+    return locationMatch ? locationMatch[1].split("\n\n")[0] : null;
+  };
+
+  const location = getLocation();
+  const descriptionWithoutLocation = appointment.description
+    ? appointment.description.replace(/Location:\s*.+(\n\n|$)/, "").trim()
+    : null;
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -55,50 +65,55 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       disabled={!onPress}
     >
       {/* Left Color Bar */}
-      <View style={[styles.colorBar, { backgroundColor: statusColor }]} />
+      <View style={[styles.colorBar, { backgroundColor: Colors.primary }]} />
 
       {/* Content */}
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title} numberOfLines={2}>
-              {appointment.title}
-            </Text>
-
-            {/* Status Badge */}
-            <View
-              style={[styles.statusBadge, { backgroundColor: statusColor }]}
-            >
-              <Text style={styles.statusText}>
-                {appointment.status.toUpperCase()}
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.title} numberOfLines={2}>
+            {appointment.title}
+          </Text>
         </View>
 
         {/* Date and Time */}
         <View style={styles.dateTimeContainer}>
           <View style={styles.dateTimeRow}>
-            <Ionicons name="calendar" size={18} color={Colors.primary} />
+            <View style={styles.iconContainer}>
+              <Ionicons name="calendar" size={18} color={Colors.primary} />
+            </View>
             <Text style={styles.dateTimeText}>
               {formatDate(appointment.date)}
             </Text>
           </View>
 
           <View style={styles.dateTimeRow}>
-            <Ionicons name="time" size={18} color={Colors.primary} />
+            <View style={styles.iconContainer}>
+              <Ionicons name="time" size={18} color={Colors.primary} />
+            </View>
             <Text style={styles.dateTimeText}>
               {formatTime(appointment.time)}
             </Text>
           </View>
         </View>
 
-        {/* Description */}
-        {appointment.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {appointment.description}
-          </Text>
+        {/* Location */}
+        {location && (
+          <View style={styles.locationContainer}>
+            <Ionicons name="location" size={16} color={Colors.accent} />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {location}
+            </Text>
+          </View>
+        )}
+
+        {/* Description (without location) */}
+        {descriptionWithoutLocation && (
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.description} numberOfLines={2}>
+              {descriptionWithoutLocation}
+            </Text>
+          </View>
         )}
 
         {/* Ride Info (if linked) */}
@@ -165,17 +180,19 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     backgroundColor: Colors.card,
-    borderRadius: Sizes.radiusM,
+    borderRadius: Sizes.radiusL,
     marginBottom: Sizes.marginL,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: Colors.border,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
   colorBar: {
-    width: 4,
+    width: 5,
   },
   content: {
     flex: 1,
@@ -184,28 +201,11 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: Sizes.marginM,
   },
-  titleContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: Sizes.marginS,
-  },
   title: {
-    flex: 1,
     fontSize: Sizes.fontXL,
     fontWeight: "700",
     color: Colors.text,
-    marginRight: Sizes.marginM,
-  },
-  statusBadge: {
-    paddingHorizontal: Sizes.paddingM,
-    paddingVertical: Sizes.paddingXS,
-    borderRadius: Sizes.radiusS,
-  },
-  statusText: {
-    fontSize: Sizes.fontXS,
-    fontWeight: "600",
-    color: Colors.textWhite,
+    marginBottom: Sizes.marginS,
   },
   dateTimeContainer: {
     flexDirection: "row",
@@ -217,16 +217,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Sizes.marginS,
   },
+  iconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   dateTimeText: {
     fontSize: Sizes.fontM,
     color: Colors.text,
-    fontWeight: "500",
+    fontWeight: "600",
+  },
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.accent + "10",
+    paddingHorizontal: Sizes.paddingM,
+    paddingVertical: Sizes.paddingS,
+    borderRadius: Sizes.radiusS,
+    marginBottom: Sizes.marginM,
+    gap: Sizes.marginS,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: Sizes.fontM,
+    color: Colors.accent,
+    fontWeight: "600",
+  },
+  descriptionContainer: {
+    backgroundColor: Colors.backgroundLight,
+    padding: Sizes.paddingM,
+    borderRadius: Sizes.radiusS,
+    marginBottom: Sizes.marginM,
   },
   description: {
     fontSize: Sizes.fontM,
     color: Colors.textSecondary,
     lineHeight: 20,
-    marginBottom: Sizes.marginM,
   },
   rideInfo: {
     flexDirection: "row",

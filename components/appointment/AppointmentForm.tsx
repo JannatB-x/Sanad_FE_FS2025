@@ -38,9 +38,16 @@ export const AppointmentForm: FC<AppointmentFormProps> = ({
   const [date, setDate] = useState(
     initialData?.date ? new Date(initialData.date) : new Date()
   );
-  const [time, setTime] = useState(
-    initialData?.time ? new Date(`2000-01-01T${initialData.time}`) : new Date()
-  );
+  const [time, setTime] = useState(() => {
+    if (initialData?.time) {
+      try {
+        return new Date(`2000-01-01T${initialData.time}`);
+      } catch {
+        return new Date();
+      }
+    }
+    return new Date();
+  });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});

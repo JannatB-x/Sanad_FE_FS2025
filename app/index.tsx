@@ -1,6 +1,7 @@
 // app/index.tsx
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../hooks/useAuth";
 import { Colors } from "../constants/Colors";
@@ -15,7 +16,7 @@ export default function Index() {
       if (isAuthenticated && user) {
         // Route based on user type
         if (user.userType === "user") {
-          router.replace("/(tabs)");
+          router.replace("/(tabs)/");
         } else if (user.userType === "rider") {
           router.replace("/(rider)/dashboard");
         } else if (user.userType === "company") {
@@ -30,14 +31,20 @@ export default function Index() {
   }, [isLoading, isAuthenticated, user]);
 
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={Colors.primary} />
-      <Text style={styles.text}>Loading Sanad...</Text>
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.text}>Loading Sanad...</Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     justifyContent: "center",

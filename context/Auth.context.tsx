@@ -6,7 +6,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { IUser, UserType } from "../types/user.type";
+import { IUser, UserType, DisabilityLevel } from "../types/user.type";
 import { authAPI } from "../api/auth.api";
 import { saveAuthData, getAuthData, clearAuthData } from "../utils/storage";
 
@@ -57,14 +57,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(storedToken);
         setUser(storedUser);
 
-        // Optionally fetch fresh user data
-        try {
-          const freshUser = await authAPI.getMe();
-          setUser(freshUser);
-          await saveAuthData(storedToken, freshUser);
-        } catch (error) {
-          console.log("Could not fetch fresh user data, using stored data");
-        }
+        // Optionally fetch fresh user data (disabled when API is off)
+        // try {
+        //   const freshUser = await authAPI.getMe();
+        //   setUser(freshUser);
+        //   await saveAuthData(storedToken, freshUser);
+        // } catch (error) {
+        //   console.log("Could not fetch fresh user data, using stored data");
+        // }
       }
     } catch (error) {
       console.error("Error loading auth data:", error);
@@ -74,17 +74,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string) => {
+    // API connections disabled - using mock login for development
+    // TODO: Re-enable API call when backend is ready
     try {
-      const response = await authAPI.login({ email, password });
-
-      if (!response.token || !response.user) {
-        throw new Error("Invalid response from server");
-      }
-
-      setToken(response.token);
-      setUser(response.user);
-
-      await saveAuthData(response.token, response.user);
+      // Mock login - replace with actual API call when ready
+      // const response = await authAPI.login({ email, password });
+      
+      // For now, create a mock user for testing
+      const mockUser: IUser = {
+        _id: "mock-user-id",
+        name: email.split("@")[0],
+        email: email,
+        userType: UserType.USER,
+        diseases: [],
+        disabilityLevel: DisabilityLevel.NONE,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      const mockToken = "mock-token-" + Date.now();
+      
+      setToken(mockToken);
+      setUser(mockUser);
+      await saveAuthData(mockToken, mockUser);
+      
+      // Uncomment below when API is enabled:
+      // const response = await authAPI.login({ email, password });
+      // if (!response.token || !response.user) {
+      //   throw new Error("Invalid response from server");
+      // }
+      // setToken(response.token);
+      // setUser(response.user);
+      // await saveAuthData(response.token, response.user);
     } catch (error: any) {
       console.error("Login error:", error);
       throw error;
@@ -97,6 +118,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string,
     userType: UserType
   ) => {
+    // Validate input
+    if (!name || name.trim().length === 0) {
+      throw new Error("Name is required");
+    }
+    if (!email || email.trim().length === 0) {
+      throw new Error("Email is required");
+    }
+    if (!password || password.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+
     // Prevent unauthorized registration of admin or company accounts
     if (userType === UserType.ADMIN || userType === UserType.COMPANY) {
       throw new Error(
@@ -105,30 +137,57 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await authAPI.register({
-        name,
-        email,
-        password,
+      // API connections disabled - using mock registration for development
+      // TODO: Re-enable API call when backend is ready
+      
+      // Mock registration - replace with actual API call when ready
+      const mockUser: IUser = {
+        _id: "mock-user-" + Date.now(),
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
         userType,
-      });
-
-      if (!response.token || !response.user) {
-        throw new Error("Invalid response from server");
-      }
-
-      setToken(response.token);
-      setUser(response.user);
-
-      await saveAuthData(response.token, response.user);
+        diseases: [],
+        disabilityLevel: DisabilityLevel.NONE,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      const mockToken = "mock-token-" + Date.now();
+      
+      setToken(mockToken);
+      setUser(mockUser);
+      await saveAuthData(mockToken, mockUser);
+      
+      // Uncomment below when API is enabled:
+      // const response = await authAPI.register({
+      //   name: name.trim(),
+      //   email: email.trim().toLowerCase(),
+      //   password,
+      //   userType,
+      // });
+      // if (!response.token || !response.user) {
+      //   throw new Error("Invalid response from server");
+      // }
+      // setToken(response.token);
+      // setUser(response.user);
+      // await saveAuthData(response.token, response.user);
     } catch (error: any) {
       console.error("Register error:", error);
+      console.error("Error details:", {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+      });
+      // Re-throw with user-friendly message
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await authAPI.logout();
+      // API connections disabled - skip API call
+      // TODO: Re-enable API call when backend is ready
+      // await authAPI.logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {

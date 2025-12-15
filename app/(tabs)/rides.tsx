@@ -8,21 +8,26 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 import { Sizes } from "../../constants/Sizes";
 import { useRide } from "../../hooks/useRide";
 import { RideCard } from "../../components/ride/RideCard";
+import { RideDetailModal } from "../../components/ride/RideDetailModal";
 import { Loading } from "../../components/common/Loading";
+import { ILocation } from "../../types/location.type";
 
 export default function RidesScreen() {
   const router = useRouter();
-  const { rides, getMyRides, loading } = useRide();
+  const { rides, getMyRides, updateRide, cancelRide, loading } = useRide();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "completed" | "cancelled">(
     "all"
   );
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedRide, setSelectedRide] = useState<any>(null);
 
   useEffect(() => {
     loadRides();
@@ -48,103 +53,139 @@ export default function RidesScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Rides</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>My Rides</Text>
+        </View>
 
-      {/* Filters */}
-      <View style={styles.filters}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "all" && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter("all")}
-        >
-          <Text
+        {/* Filters */}
+        <View style={styles.filters}>
+          <TouchableOpacity
             style={[
-              styles.filterText,
-              filter === "all" && styles.filterTextActive,
+              styles.filterButton,
+              filter === "all" && styles.filterButtonActive,
             ]}
+            onPress={() => setFilter("all")}
           >
-            All
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "completed" && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter("completed")}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === "completed" && styles.filterTextActive,
-            ]}
-          >
-            Completed
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "cancelled" && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter("cancelled")}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === "cancelled" && styles.filterTextActive,
-            ]}
-          >
-            Cancelled
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Rides List */}
-      <ScrollView
-        style={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {filteredRides.length > 0 ? (
-          filteredRides.map((ride) => (
-            <RideCard
-              key={ride._id}
-              ride={ride}
-              onPress={() => router.push(`/ride/${ride._id}`)}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="car-outline" size={64} color={Colors.textLight} />
-            <Text style={styles.emptyText}>
-              {filter === "all" ? "No rides yet" : `No ${filter} rides`}
+            <Text
+              style={[
+                styles.filterText,
+                filter === "all" && styles.filterTextActive,
+              ]}
+            >
+              All
             </Text>
-            {filter === "all" && (
-              <TouchableOpacity
-                style={styles.bookButton}
-                onPress={() => router.push("/book-ride")}
-              >
-                <Text style={styles.bookButtonText}>Book Your First Ride</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </ScrollView>
-    </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filter === "completed" && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter("completed")}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                filter === "completed" && styles.filterTextActive,
+              ]}
+            >
+              Completed
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filter === "cancelled" && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter("cancelled")}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                filter === "cancelled" && styles.filterTextActive,
+              ]}
+            >
+              Cancelled
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Rides List */}
+        <ScrollView
+          style={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {filteredRides.length > 0 ? (
+            filteredRides.map((ride) => (
+              <RideCard
+                key={ride._id}
+                ride={ride}
+                onPress={() => {
+                  setSelectedRide(ride);
+                  setShowDetailModal(true);
+                }}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Ionicons name="car-outline" size={64} color={Colors.textLight} />
+              <Text style={styles.emptyText}>
+                {filter === "all" ? "No rides yet" : `No ${filter} rides`}
+              </Text>
+              {filter === "all" && (
+                <TouchableOpacity
+                  style={styles.bookButton}
+                  onPress={() => router.push("/book-ride")}
+                >
+                  <Text style={styles.bookButtonText}>
+                    Book Your First Ride
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Ride Detail Modal */}
+      <RideDetailModal
+        visible={showDetailModal}
+        ride={selectedRide}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedRide(null);
+        }}
+        onUpdateDropoff={async (rideId: string, dropoffLocation: ILocation) => {
+          await updateRide(rideId, { dropoffLocation });
+          await loadRides();
+        }}
+        onAddStop={async (rideId: string, stopLocation: ILocation) => {
+          // For now, add stop as a new dropoff (in a real app, you'd have multiple stops)
+          // This updates the dropoff to the new stop location
+          await updateRide(rideId, { dropoffLocation: stopLocation });
+          await loadRides();
+        }}
+        onCancel={async (rideId: string, reason?: string) => {
+          await cancelRide(rideId, reason);
+          await loadRides();
+        }}
+        loading={loading}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,

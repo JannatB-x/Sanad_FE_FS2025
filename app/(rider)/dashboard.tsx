@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Switch,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
@@ -42,130 +43,138 @@ export default function RiderDashboardScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Welcome back,</Text>
-          <Text style={styles.name}>{user?.name || "Driver"}</Text>
-        </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Ionicons
-            name="notifications-outline"
-            size={24}
-            color={Colors.text}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Online Status */}
-      <View style={styles.statusCard}>
-        <View style={styles.statusLeft}>
-          <View
-            style={[
-              styles.statusIndicator,
-              { backgroundColor: isOnline ? Colors.success : Colors.textLight },
-            ]}
-          />
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
           <View>
-            <Text style={styles.statusTitle}>
-              {isOnline ? "You're Online" : "You're Offline"}
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.name}>{user?.name || "Driver"}</Text>
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={Colors.text}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Online Status */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusLeft}>
+            <View
+              style={[
+                styles.statusIndicator,
+                {
+                  backgroundColor: isOnline ? Colors.success : Colors.textLight,
+                },
+              ]}
+            />
+            <View>
+              <Text style={styles.statusTitle}>
+                {isOnline ? "You're Online" : "You're Offline"}
+              </Text>
+              <Text style={styles.statusSubtitle}>
+                {isOnline
+                  ? "Ready to accept ride requests"
+                  : "Turn on to start receiving rides"}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={isOnline}
+            onValueChange={toggleOnlineStatus}
+            trackColor={{ false: Colors.border, true: Colors.success }}
+            thumbColor={Colors.textWhite}
+          />
+        </View>
+
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Ionicons name="wallet" size={32} color={Colors.success} />
+            <Text style={styles.statValue}>
+              {formatCurrency(stats.todayEarnings)}
             </Text>
-            <Text style={styles.statusSubtitle}>
-              {isOnline
-                ? "Ready to accept ride requests"
-                : "Turn on to start receiving rides"}
+            <Text style={styles.statLabel}>Today's Earnings</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Ionicons name="car" size={32} color={Colors.primary} />
+            <Text style={styles.statValue}>{stats.todayRides}</Text>
+            <Text style={styles.statLabel}>Today's Rides</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Ionicons name="star" size={32} color={Colors.warning} />
+            <Text style={styles.statValue}>{stats.rating}</Text>
+            <Text style={styles.statLabel}>Rating</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Ionicons name="checkmark-circle" size={32} color={Colors.info} />
+            <Text style={styles.statValue}>{stats.completionRate}%</Text>
+            <Text style={styles.statLabel}>Completion</Text>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActions}>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push("/(rider)/active-ride")}
+            >
+              <Ionicons name="car-sport" size={32} color={Colors.primary} />
+              <Text style={styles.actionText}>Current Ride</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push("/(rider)/earnings")}
+            >
+              <Ionicons name="analytics" size={32} color={Colors.success} />
+              <Text style={styles.actionText}>View Earnings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionCard}>
+              <Ionicons name="time" size={32} color={Colors.info} />
+              <Text style={styles.actionText}>Ride History</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionCard}>
+              <Ionicons
+                name="settings"
+                size={32}
+                color={Colors.textSecondary}
+              />
+              <Text style={styles.actionText}>Settings</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Tips */}
+        <View style={styles.tipsCard}>
+          <Ionicons name="bulb" size={24} color={Colors.warning} />
+          <View style={styles.tipsContent}>
+            <Text style={styles.tipsTitle}>Driver Tip</Text>
+            <Text style={styles.tipsText}>
+              Peak hours are 7-9 AM and 5-8 PM. Turn online during these times
+              to maximize earnings!
             </Text>
           </View>
         </View>
-        <Switch
-          value={isOnline}
-          onValueChange={toggleOnlineStatus}
-          trackColor={{ false: Colors.border, true: Colors.success }}
-          thumbColor={Colors.textWhite}
-        />
-      </View>
 
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Ionicons name="wallet" size={32} color={Colors.success} />
-          <Text style={styles.statValue}>
-            {formatCurrency(stats.todayEarnings)}
-          </Text>
-          <Text style={styles.statLabel}>Today's Earnings</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <Ionicons name="car" size={32} color={Colors.primary} />
-          <Text style={styles.statValue}>{stats.todayRides}</Text>
-          <Text style={styles.statLabel}>Today's Rides</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <Ionicons name="star" size={32} color={Colors.warning} />
-          <Text style={styles.statValue}>{stats.rating}</Text>
-          <Text style={styles.statLabel}>Rating</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <Ionicons name="checkmark-circle" size={32} color={Colors.info} />
-          <Text style={styles.statValue}>{stats.completionRate}%</Text>
-          <Text style={styles.statLabel}>Completion</Text>
-        </View>
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push("/(rider)/active-ride")}
-          >
-            <Ionicons name="car-sport" size={32} color={Colors.primary} />
-            <Text style={styles.actionText}>Current Ride</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push("/(rider)/earnings")}
-          >
-            <Ionicons name="analytics" size={32} color={Colors.success} />
-            <Text style={styles.actionText}>View Earnings</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionCard}>
-            <Ionicons name="time" size={32} color={Colors.info} />
-            <Text style={styles.actionText}>Ride History</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionCard}>
-            <Ionicons name="settings" size={32} color={Colors.textSecondary} />
-            <Text style={styles.actionText}>Settings</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Tips */}
-      <View style={styles.tipsCard}>
-        <Ionicons name="bulb" size={24} color={Colors.warning} />
-        <View style={styles.tipsContent}>
-          <Text style={styles.tipsTitle}>Driver Tip</Text>
-          <Text style={styles.tipsText}>
-            Peak hours are 7-9 AM and 5-8 PM. Turn online during these times to
-            maximize earnings!
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

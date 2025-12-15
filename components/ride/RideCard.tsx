@@ -1,6 +1,6 @@
 // components/ride/RideCard.tsx
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Alert, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { IRide } from "../../types/ride.type";
 import { Colors, getStatusColor } from "../../constants/Colors";
@@ -35,6 +35,32 @@ export const RideCard: React.FC<RideCardProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleCallDriver = () => {
+    // Get driver phone number - in a real app, this would come from the rider object
+    // For now, we'll use a placeholder or check if phone exists
+    const driverPhone = (ride.rider as any)?.phone || "+96512345678"; // Default Kuwait number
+    
+    const phoneUrl = Platform.select({
+      ios: `telprompt:${driverPhone}`,
+      android: `tel:${driverPhone}`,
+    });
+
+    if (phoneUrl) {
+      Linking.canOpenURL(phoneUrl)
+        .then((supported) => {
+          if (supported) {
+            return Linking.openURL(phoneUrl);
+          } else {
+            Alert.alert("Error", "Unable to make phone call");
+          }
+        })
+        .catch((err) => {
+          console.error("Error calling driver:", err);
+          Alert.alert("Error", "Unable to make phone call");
+        });
+    }
   };
 
   return (
@@ -125,6 +151,18 @@ export const RideCard: React.FC<RideCardProps> = ({
             {ride.rider.vehicleInfo.model} • {ride.rider.vehicleInfo.color}
           </Text>
         </View>
+      )}
+
+      {/* Call Driver Button (if rider is assigned) */}
+      {ride.rider && (ride.status === "accepted" || ride.status === "in-progress") && (
+        <TouchableOpacity
+          style={styles.callButton}
+          onPress={handleCallDriver}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="call" size={18} color={Colors.textWhite} />
+          <Text style={styles.callButtonText}>Call Driver</Text>
+        </TouchableOpacity>
       )}
 
       {/* Price and Details */}
@@ -311,5 +349,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: Sizes.paddingL,
     bottom: Sizes.paddingL,
+  },
+  callButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.success,
+    paddingVertical: Sizes.paddingM,
+    paddingHorizontal: Sizes.paddingL,
+    borderRadius: Sizes.radiusM,
+    marginTop: Sizes.marginM,
+    gap: Sizes.marginS,
+  },
+  callButtonText: {
+    color: Colors.textWhite,
+    fontSize: Sizes.fontM,
+    fontWeight: "600",
   },
 });

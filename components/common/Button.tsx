@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { Sizes } from "../../constants/Sizes";
+import { useFontSize } from "../../utils/fontSize";
 
 interface ButtonProps {
   title: string;
@@ -36,6 +37,8 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const fontSize = useFontSize();
+
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       ...styles.button,
@@ -93,13 +96,13 @@ export const Button: React.FC<ButtonProps> = ({
     // Size text styles
     switch (size) {
       case "small":
-        baseTextStyle.fontSize = Sizes.fontM;
+        baseTextStyle.fontSize = fontSize.fontM;
         break;
       case "large":
-        baseTextStyle.fontSize = Sizes.fontXL;
+        baseTextStyle.fontSize = fontSize.fontXL;
         break;
       default:
-        baseTextStyle.fontSize = Sizes.fontL;
+        baseTextStyle.fontSize = fontSize.fontL;
     }
 
     // Variant text styles

@@ -9,6 +9,7 @@ import {
   Platform,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
@@ -30,7 +31,8 @@ export default function LoginScreen() {
       setLoading(true);
       setError("");
       await login(email, password);
-      // Navigation handled by index.tsx
+      // Navigation will be handled by index.tsx based on user type
+      // The auth context updates user state, which triggers routing in index.tsx
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {
@@ -39,65 +41,73 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome to Sanad</Text>
-          <Text style={styles.subtitle}>Medical Transportation in Kuwait</Text>
-        </View>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome to Sanad</Text>
+            <Text style={styles.subtitle}>
+              Medical Transportation in Kuwait
+            </Text>
+          </View>
 
-        <View style={styles.form}>
-          <Input
-            label="Email"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            icon="mail"
-          />
+          <View style={styles.form}>
+            <Input
+              label="Email"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              icon="mail"
+            />
 
-          <Input
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            icon="lock-closed"
-          />
+            <Input
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              icon="lock-closed"
+            />
 
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => router.push("/(auth)/forgot-password")}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => router.push("/(auth)/forgot-password")}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
 
-          {error && <Text style={styles.error}>{error}</Text>}
+            {error && <Text style={styles.error}>{error}</Text>}
 
-          <Button
-            title="Login"
-            onPress={handleLogin}
-            loading={loading}
-            fullWidth
-          />
+            <Button
+              title="Login"
+              onPress={handleLogin}
+              loading={loading}
+              fullWidth
+            />
 
-          <Button
-            title="Create Account"
-            onPress={() => router.push("/(auth)/register")}
-            variant="outline"
-            fullWidth
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Button
+              title="Create Account"
+              onPress={() => router.push("/(auth)/register")}
+              variant="outline"
+              fullWidth
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,

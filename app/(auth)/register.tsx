@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
@@ -27,113 +28,166 @@ export default function RegisterScreen() {
   const [error, setError] = useState("");
 
   const handleRegister = async () => {
+    // Clear previous errors
+    setError("");
+
+    // Basic validation
+    if (!name.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    if (!email.trim()) {
+      setError("Please enter your email");
+      return;
+    }
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     try {
       setLoading(true);
-      setError("");
       await register(name, email, password, userType);
-      // Navigation handled by index.tsx
+
+      // Route to appropriate home page based on user type
+      // This happens immediately after successful registration
+      switch (userType) {
+        case UserType.USER:
+          router.replace("/(tabs)/");
+          break;
+        case UserType.RIDER:
+          router.replace("/(rider)/dashboard");
+          break;
+        case UserType.COMPANY:
+          router.replace("/(company)/dashboard");
+          break;
+        case UserType.ADMIN:
+          router.replace("/(admin)/dashboard");
+          break;
+        default:
+          router.replace("/(tabs)/");
+      }
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Registration failed. Please try again.";
+      setError(errorMessage);
+      console.error("Registration error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join Sanad today</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join Sanad today</Text>
 
-      <View style={styles.form}>
-        <Input
-          label="Full Name"
-          placeholder="Enter your name"
-          value={name}
-          onChangeText={setName}
-          icon="person"
-        />
+        <View style={styles.form}>
+          <Input
+            label="Full Name"
+            placeholder="Enter your name"
+            value={name}
+            onChangeText={setName}
+            icon="person"
+          />
 
-        <Input
-          label="Email"
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          icon="mail"
-        />
+          <Input
+            label="Email"
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            icon="mail"
+          />
 
-        <Input
-          label="Password"
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          icon="lock-closed"
-        />
+          <Input
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            icon="lock-closed"
+          />
 
-        {/* User Type Selection */}
-        <View style={styles.userTypeSection}>
-          <Text style={styles.userTypeLabel}>I am a:</Text>
-          <View style={styles.userTypeButtons}>
-            <TouchableOpacity
-              style={[
-                styles.userTypeButton,
-                userType === UserType.USER && styles.userTypeButtonActive,
-              ]}
-              onPress={() => setUserType(UserType.USER)}
-            >
-              <Text
+          {/* User Type Selection */}
+          <View style={styles.userTypeSection}>
+            <Text style={styles.userTypeLabel}>I am a:</Text>
+            <View style={styles.userTypeButtons}>
+              <TouchableOpacity
                 style={[
-                  styles.userTypeButtonText,
-                  userType === UserType.USER && styles.userTypeButtonTextActive,
+                  styles.userTypeButton,
+                  userType === UserType.USER && styles.userTypeButtonActive,
                 ]}
+                onPress={() => setUserType(UserType.USER)}
               >
-                Passenger
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.userTypeButtonText,
+                    userType === UserType.USER &&
+                      styles.userTypeButtonTextActive,
+                  ]}
+                >
+                  Passenger
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.userTypeButton,
-                userType === UserType.RIDER && styles.userTypeButtonActive,
-              ]}
-              onPress={() => setUserType(UserType.RIDER)}
-            >
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.userTypeButtonText,
-                  userType === UserType.RIDER &&
-                    styles.userTypeButtonTextActive,
+                  styles.userTypeButton,
+                  userType === UserType.RIDER && styles.userTypeButtonActive,
                 ]}
+                onPress={() => setUserType(UserType.RIDER)}
               >
-                Driver
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.userTypeButtonText,
+                    userType === UserType.RIDER &&
+                      styles.userTypeButtonTextActive,
+                  ]}
+                >
+                  Driver
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {error && <Text style={styles.error}>{error}</Text>}
+
+          <Button
+            title="Create Account"
+            onPress={handleRegister}
+            loading={loading}
+            fullWidth
+          />
+
+          <Button
+            title="Back to Login"
+            onPress={() => router.back()}
+            variant="outline"
+            fullWidth
+          />
         </View>
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Button
-          title="Create Account"
-          onPress={handleRegister}
-          loading={loading}
-          fullWidth
-        />
-
-        <Button
-          title="Back to Login"
-          onPress={() => router.back()}
-          variant="outline"
-          fullWidth
-        />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,

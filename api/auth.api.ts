@@ -1,4 +1,6 @@
 // api/auth.api.ts
+// NOTE: API connections are currently disabled
+// To enable: Set API_ENABLED = true in constants/API.ts and set API_BASE_URL
 import apiClient from "./index";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IUser, UserType } from "../types/user.type";
@@ -22,17 +24,105 @@ export interface AuthResponse {
   user: IUser;
 }
 
+// Backend response format (common pattern)
+interface BackendAuthResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    user: IUser;
+    token: string;
+  };
+  token?: string;
+  user?: IUser;
+}
+
 export const authAPI = {
   // Register
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, data);
-    return response as unknown as AuthResponse;
+    try {
+      const response = await apiClient.post<BackendAuthResponse>(
+        ENDPOINTS.AUTH.REGISTER,
+        data
+      );
+
+      // Handle different response formats
+      // Format 1: { success: true, data: { user, token } }
+      if (response.data?.user && response.data?.token) {
+        return {
+          success: true,
+          token: response.data.token,
+          user: response.data.user,
+        };
+      }
+
+      // Format 2: { success: true, user, token } (flat structure)
+      if (response.user && response.token) {
+        return {
+          success: true,
+          token: response.token,
+          user: response.user,
+        };
+      }
+
+      // Format 3: Direct AuthResponse
+      if ((response as any).token && (response as any).user) {
+        return response as unknown as AuthResponse;
+      }
+
+      throw new Error(
+        response.message || "Invalid response format from server"
+      );
+    } catch (error: any) {
+      // Re-throw with more context
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw error;
+      }
+      throw new Error("Registration failed. Please try again.");
+    }
   },
 
   // Login
   login: async (data: LoginData): Promise<AuthResponse> => {
-    const response = await apiClient.post(ENDPOINTS.AUTH.LOGIN, data);
-    return response as unknown as AuthResponse;
+    try {
+      const response = await apiClient.post<BackendAuthResponse>(
+        ENDPOINTS.AUTH.LOGIN,
+        data
+      );
+
+      // Handle different response formats
+      if (response.data?.user && response.data?.token) {
+        return {
+          success: true,
+          token: response.data.token,
+          user: response.data.user,
+        };
+      }
+
+      if (response.user && response.token) {
+        return {
+          success: true,
+          token: response.token,
+          user: response.user,
+        };
+      }
+
+      if ((response as any).token && (response as any).user) {
+        return response as unknown as AuthResponse;
+      }
+
+      throw new Error(response.message || "Invalid response format from server");
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw error;
+      }
+      throw new Error("Login failed. Please try again.");
+    }
   },
 
   // Logout

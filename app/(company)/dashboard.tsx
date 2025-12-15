@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
@@ -38,142 +39,148 @@ export default function CompanyDashboardScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Company Dashboard</Text>
-          <Text style={styles.name}>{user?.name || "Company"}</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Company Dashboard</Text>
+            <Text style={styles.name}>{user?.name || "Company"}</Text>
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={Colors.text}
+            />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Ionicons
-            name="notifications-outline"
-            size={24}
-            color={Colors.text}
-          />
-        </TouchableOpacity>
-      </View>
 
-      {/* Revenue Card */}
-      <View style={styles.revenueCard}>
-        <View style={styles.revenueHeader}>
-          <Ionicons name="trending-up" size={32} color={Colors.success} />
-          <Text style={styles.revenueLabel}>Monthly Revenue</Text>
-        </View>
-        <Text style={styles.revenueAmount}>
-          {formatCurrency(stats.monthlyRevenue)}
-        </Text>
-        <View style={styles.revenueFooter}>
-          <Text style={styles.revenueSubtext}>
-            Today: {formatCurrency(stats.todayRevenue)}
+        {/* Revenue Card */}
+        <View style={styles.revenueCard}>
+          <View style={styles.revenueHeader}>
+            <Ionicons name="trending-up" size={32} color={Colors.success} />
+            <Text style={styles.revenueLabel}>Monthly Revenue</Text>
+          </View>
+          <Text style={styles.revenueAmount}>
+            {formatCurrency(stats.monthlyRevenue)}
           </Text>
-        </View>
-      </View>
-
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <Ionicons name="car-sport" size={28} color={Colors.primary} />
-          <Text style={styles.statValue}>{stats.activeVehicles}</Text>
-          <Text style={styles.statLabel}>Active Vehicles</Text>
-          <Text style={styles.statTotal}>of {stats.totalVehicles} total</Text>
+          <View style={styles.revenueFooter}>
+            <Text style={styles.revenueSubtext}>
+              Today: {formatCurrency(stats.todayRevenue)}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.statCard}>
-          <Ionicons name="people" size={28} color={Colors.info} />
-          <Text style={styles.statValue}>{stats.activeDrivers}</Text>
-          <Text style={styles.statLabel}>Active Drivers</Text>
-          <Text style={styles.statTotal}>of {stats.totalDrivers} total</Text>
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Ionicons name="car-sport" size={28} color={Colors.primary} />
+            <Text style={styles.statValue}>{stats.activeVehicles}</Text>
+            <Text style={styles.statLabel}>Active Vehicles</Text>
+            <Text style={styles.statTotal}>of {stats.totalVehicles} total</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Ionicons name="people" size={28} color={Colors.info} />
+            <Text style={styles.statValue}>{stats.activeDrivers}</Text>
+            <Text style={styles.statLabel}>Active Drivers</Text>
+            <Text style={styles.statTotal}>of {stats.totalDrivers} total</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Ionicons name="speedometer" size={28} color={Colors.success} />
+            <Text style={styles.statValue}>{stats.todayRides}</Text>
+            <Text style={styles.statLabel}>Today's Rides</Text>
+            <Text style={styles.statTotal}>In progress</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Ionicons name="wallet" size={28} color={Colors.warning} />
+            <Text style={styles.statValue}>
+              {formatCurrency(stats.todayRevenue)}
+            </Text>
+            <Text style={styles.statLabel}>Today's Revenue</Text>
+            <Text style={styles.statTotal}>Earnings</Text>
+          </View>
         </View>
 
-        <View style={styles.statCard}>
-          <Ionicons name="speedometer" size={28} color={Colors.success} />
-          <Text style={styles.statValue}>{stats.todayRides}</Text>
-          <Text style={styles.statLabel}>Today's Rides</Text>
-          <Text style={styles.statTotal}>In progress</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <Ionicons name="wallet" size={28} color={Colors.warning} />
-          <Text style={styles.statValue}>
-            {formatCurrency(stats.todayRevenue)}
-          </Text>
-          <Text style={styles.statLabel}>Today's Revenue</Text>
-          <Text style={styles.statTotal}>Earnings</Text>
-        </View>
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push("/(company)/vehicles")}
-          >
-            <View
-              style={[
-                styles.actionIcon,
-                { backgroundColor: Colors.primary + "20" },
-              ]}
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActions}>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push("/(company)/vehicles")}
             >
-              <Ionicons name="car-sport" size={28} color={Colors.primary} />
-            </View>
-            <Text style={styles.actionText}>Manage Vehicles</Text>
-          </TouchableOpacity>
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: Colors.primary + "20" },
+                ]}
+              >
+                <Ionicons name="car-sport" size={28} color={Colors.primary} />
+              </View>
+              <Text style={styles.actionText}>Manage Vehicles</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push("/(company)/riders")}
-          >
-            <View
-              style={[
-                styles.actionIcon,
-                { backgroundColor: Colors.info + "20" },
-              ]}
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push("/(company)/riders")}
             >
-              <Ionicons name="people" size={28} color={Colors.info} />
-            </View>
-            <Text style={styles.actionText}>Manage Drivers</Text>
-          </TouchableOpacity>
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: Colors.info + "20" },
+                ]}
+              >
+                <Ionicons name="people" size={28} color={Colors.info} />
+              </View>
+              <Text style={styles.actionText}>Manage Drivers</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard}>
-            <View
-              style={[
-                styles.actionIcon,
-                { backgroundColor: Colors.success + "20" },
-              ]}
-            >
-              <Ionicons name="add-circle" size={28} color={Colors.success} />
-            </View>
-            <Text style={styles.actionText}>Add Vehicle</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.actionCard}>
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: Colors.success + "20" },
+                ]}
+              >
+                <Ionicons name="add-circle" size={28} color={Colors.success} />
+              </View>
+              <Text style={styles.actionText}>Add Vehicle</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard}>
-            <View
-              style={[
-                styles.actionIcon,
-                { backgroundColor: Colors.warning + "20" },
-              ]}
-            >
-              <Ionicons name="analytics" size={28} color={Colors.warning} />
-            </View>
-            <Text style={styles.actionText}>View Reports</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.actionCard}>
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: Colors.warning + "20" },
+                ]}
+              >
+                <Ionicons name="analytics" size={28} color={Colors.warning} />
+              </View>
+              <Text style={styles.actionText}>View Reports</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,

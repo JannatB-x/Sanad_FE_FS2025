@@ -1,8 +1,9 @@
 // constants/API.ts
-export const API_BASE_URL = "http://localhost:5000/api/v1";
-
-// Or for production
+// API connections disabled - edit freely before connecting
+// export const API_BASE_URL = "http://localhost:5000/api/v1";
 // export const API_BASE_URL = "https://your-production-api.com/api/v1";
+export const API_BASE_URL = ""; // Disabled - no backend connection
+export const API_ENABLED = false; // Set to true when ready to connect
 
 export const ENDPOINTS = {
   AUTH: {

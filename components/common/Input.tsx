@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 import { Sizes } from "../../constants/Sizes";
+import { useFontSize } from "../../utils/fontSize";
 
 interface InputProps extends Omit<TextInputProps, "style"> {
   label?: string;
@@ -39,15 +40,22 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const [isSecure, setIsSecure] = useState(secureTextEntry);
   const [isFocused, setIsFocused] = useState(false);
+  const fontSize = useFontSize();
 
   const toggleSecureEntry = () => {
     setIsSecure(!isSecure);
   };
 
+  const dynamicStyles = {
+    label: { fontSize: fontSize.fontM },
+    input: { fontSize: fontSize.fontL },
+    errorText: { fontSize: fontSize.fontS },
+  };
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <Text style={styles.label}>
+        <Text style={[styles.label, dynamicStyles.label]}>
           {label}
           {required && <Text style={styles.required}> *</Text>}
         </Text>
@@ -76,7 +84,7 @@ export const Input: React.FC<InputProps> = ({
         )}
 
         <TextInput
-          style={[styles.input, inputStyle]}
+          style={[styles.input, dynamicStyles.input, inputStyle]}
           placeholderTextColor={Colors.textLight}
           secureTextEntry={isSecure}
           onFocus={() => setIsFocused(true)}
@@ -110,7 +118,7 @@ export const Input: React.FC<InputProps> = ({
       {error && (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={14} color={Colors.error} />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, dynamicStyles.errorText]}>{error}</Text>
         </View>
       )}
     </View>
@@ -122,7 +130,6 @@ const styles = StyleSheet.create({
     marginBottom: Sizes.marginL,
   },
   label: {
-    fontSize: Sizes.fontM,
     fontWeight: "600",
     color: Colors.text,
     marginBottom: Sizes.marginS,
@@ -149,7 +156,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: Sizes.fontL,
     color: Colors.text,
     paddingVertical: 0,
     height: "100%",
@@ -169,7 +175,6 @@ const styles = StyleSheet.create({
     marginTop: Sizes.marginS,
   },
   errorText: {
-    fontSize: Sizes.fontS,
     color: Colors.error,
     marginLeft: Sizes.marginXS,
   },
