@@ -1,261 +1,141 @@
-import { login } from "../../api/auth";
-import { setToken } from "../../api/client";
-import AuthContext from "../../context/authContext";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter, type Href } from "expo-router";
-import React, { useContext, useState } from "react";
-import type { AuthResponse } from "../../types/index";
+// app/(auth)/login.tsx
+import React, { useState } from "react";
 import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Text,
-  TextInput,
   TouchableOpacity,
-  View,
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import colors from "../../data/colors";
-import baseStyles from "../../components/styleSheet";
+import { useRouter } from "expo-router";
+import { Input } from "../../components/common/Input";
+import { Button } from "../../components/common/Button";
+import { Colors } from "../../constants/Colors";
+import { Sizes } from "../../constants/Sizes";
+import { useAuth } from "../../hooks/useAuth";
 
-const Login = () => {
+export default function LoginScreen() {
+  const router = useRouter();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const { setIsAuthenticated } = useContext(AuthContext);
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const { mutate, isPending } = useMutation({
-    mutationKey: ["login"],
-    mutationFn: () => login({ email, password }),
-    onSuccess: async (data: AuthResponse) => {
-      if (data?.token) {
-        await setToken(data.token);
-        console.log("Login successful - Token stored");
-        setIsAuthenticated(true);
-        router.replace("/(protected)/(home)" as Href);
-      } else {
-        console.error("No token received from login response");
-        setErrorMessage(
-          "Login failed: No token received. Please try again or contact support."
-        );
-      }
-    },
-    onError: (error: any) => {
-      // Check if it's a network error
-      if (error?.isNetworkError || !error?.response) {
-        setErrorMessage(
-          "Unable to connect to the server. Please check your internet connection and ensure the server is running."
-        );
-        return;
-      }
-
-      const errorData = error?.response?.data;
-      const message =
-        errorData?.message ||
-        errorData?.error ||
-        (typeof errorData === "string" ? errorData : null) ||
-        "Invalid credentials. Please try again.";
-      setErrorMessage(message);
-    },
-  });
-
-  const handleLogin = () => {
-    if (!email || !password) {
-      setErrorMessage("Please enter email and password");
-      return;
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      await login(email, password);
+      // Navigation handled by index.tsx
+    } catch (err: any) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorMessage("Please enter a valid email address");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters");
-      return;
-    }
-
-    setErrorMessage("");
-    mutate();
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={baseStyles.container}
+      style={styles.container}
     >
-      <ScrollView
-        contentContainerStyle={baseStyles.innerContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={baseStyles.header}>
-          <View style={loginStyles.logoContainer}>
-            <Ionicons name="car" size={48} color={colors.primary} />
-          </View>
-          <Text style={baseStyles.headerTitle}>Sanad</Text>
-          <Text style={loginStyles.subtitle}>
-            Your transportation companion
-          </Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Welcome to Sanad</Text>
+          <Text style={styles.subtitle}>Medical Transportation in Kuwait</Text>
         </View>
 
-        <View style={baseStyles.formWrapper}>
-          <Text style={baseStyles.title}>Welcome Back</Text>
-          <Text style={loginStyles.description}>
-            Sign in to continue to your account
-          </Text>
+        <View style={styles.form}>
+          <Input
+            label="Email"
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            icon="mail"
+          />
 
-          {errorMessage ? (
-            <View style={baseStyles.errorBox}>
-              <Ionicons
-                name="alert-circle"
-                size={20}
-                color={colors.danger}
-                style={loginStyles.errorIcon}
-              />
-              <Text style={baseStyles.errorText}>{errorMessage}</Text>
-            </View>
-          ) : null}
-
-          <View style={loginStyles.inputContainer}>
-            <Ionicons
-              name="mail-outline"
-              size={20}
-              color={colors.gray}
-              style={loginStyles.inputIcon}
-            />
-            <TextInput
-              style={loginStyles.inputWithIcon}
-              placeholder="Email"
-              placeholderTextColor={colors.gray}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              editable={!isPending}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text.trim());
-                if (errorMessage) setErrorMessage("");
-              }}
-            />
-          </View>
-
-          <View style={loginStyles.inputContainer}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color={colors.gray}
-              style={loginStyles.inputIcon}
-            />
-            <TextInput
-              style={loginStyles.inputWithIcon}
-              placeholder="Password"
-              placeholderTextColor={colors.gray}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoComplete="password"
-              editable={!isPending}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (errorMessage) setErrorMessage("");
-              }}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={loginStyles.eyeIcon}
-            >
-              <Ionicons
-                name={showPassword ? "eye-outline" : "eye-off-outline"}
-                size={20}
-                color={colors.gray}
-              />
-            </TouchableOpacity>
-          </View>
+          <Input
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            icon="lock-closed"
+          />
 
           <TouchableOpacity
-            style={[baseStyles.button, isPending && loginStyles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={isPending}
+            style={styles.forgotPassword}
+            onPress={() => router.push("/(auth)/forgot-password")}
           >
-            {isPending ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={baseStyles.buttonText}>Login</Text>
-            )}
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <View style={baseStyles.footerRow}>
-            <Text style={baseStyles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/register" as Href)}
-              disabled={isPending}
-            >
-              <Text style={baseStyles.footerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
+          {error && <Text style={styles.error}>{error}</Text>}
+
+          <Button
+            title="Login"
+            onPress={handleLogin}
+            loading={loading}
+            fullWidth
+          />
+
+          <Button
+            title="Create Account"
+            onPress={() => router.push("/(auth)/register")}
+            variant="outline"
+            fullWidth
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
-};
+}
 
-const loginStyles = StyleSheet.create({
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.light,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
+    padding: Sizes.paddingL,
+  },
+  header: {
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: Sizes.marginXXL,
+  },
+  title: {
+    fontSize: Sizes.font4XL,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: Sizes.marginM,
   },
   subtitle: {
-    fontSize: 16,
-    color: colors.gray,
-    marginTop: 8,
+    fontSize: Sizes.fontL,
+    color: Colors.textSecondary,
   },
-  description: {
-    fontSize: 14,
-    color: colors.gray,
+  form: {
+    gap: Sizes.marginL,
+  },
+  forgotPassword: {
+    alignSelf: "flex-end",
+    marginTop: -Sizes.marginM,
+  },
+  forgotPasswordText: {
+    fontSize: Sizes.fontM,
+    color: Colors.primary,
+    fontWeight: "600",
+  },
+  error: {
+    color: Colors.error,
+    fontSize: Sizes.fontM,
     textAlign: "center",
-    marginBottom: 24,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.light,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  inputWithIcon: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.dark,
-    paddingVertical: 16,
-  },
-  eyeIcon: {
-    padding: 4,
-  },
-  errorIcon: {
-    marginRight: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });
-
-export default Login;

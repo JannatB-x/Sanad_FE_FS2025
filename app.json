@@ -9,15 +9,25 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sanad.app"
     },
     "android": {
-      "package": "com.sanad.app"
+      "package": "com.sanad.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDh5EQ_WkXDqErL0VgmlOInGj1tZDE5HLY"
+        }
+      }
     },
     "scheme": "sanad",
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
   }
 }

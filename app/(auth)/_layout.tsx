@@ -1,21 +1,16 @@
+// app/(auth)/_layout.tsx
 import React from "react";
 import { Stack } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { layoutStyles } from "../../components/styleSheet";
 
-const AuthLayout = () => {
+export default function AuthLayout() {
   return (
-    <SafeAreaView
-      style={layoutStyles.safeArea}
-      edges={["left", "right", "bottom"]}
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
     >
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-    </SafeAreaView>
+      <Stack.Screen name="login" />
+      <Stack.Screen name="register" />
+    </Stack>
   );
-};
-
-export default AuthLayout;
+}

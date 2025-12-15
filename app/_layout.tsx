@@ -1,24 +1,25 @@
-import React from "react";
-import { Slot } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "../context/authContext";
-
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// app/_layout.tsx
+import React, { useEffect } from "react";
+import { Stack } from "expo-router";
+import { AuthProvider } from "../context/Auth.context";
+import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Slot />
-      </AuthProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <StatusBar style="auto" />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(rider)" />
+        <Stack.Screen name="(company)" />
+        <Stack.Screen name="(admin)" />
+      </Stack>
+    </AuthProvider>
   );
 }
